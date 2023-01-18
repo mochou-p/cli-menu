@@ -3,7 +3,15 @@
 ## Usage
 ```cpp
 // C++
-Menu title_screen("play,settings,quit");
+Menu title_screen
+(
+    "play,"
+    "settings:"
+        "gameplay,"
+        "video,"
+        "audio;"
+    "quit"
+);
 
 title_screen.render();
 ```
