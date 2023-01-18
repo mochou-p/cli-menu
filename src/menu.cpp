@@ -2,33 +2,35 @@
 
 #include "menu.hpp"
 
-MenuNode::MenuNode(std::string _str)
+#include <iostream>
+
+MenuNode::MenuNode(std::string t_str)
 {
-    std::size_t pos = _str.find(",");
+    std::size_t pos = t_str.find(",");
 
-    text = _str.substr(0, pos);
+    m_text = t_str.substr(0, pos);
 
-    if (pos < _str.length())
-        next = new MenuNode(_str.substr(pos + 1));
+    if (pos < t_str.length())
+        m_bro = new MenuNode(t_str.substr(pos + 1));
 }
 
 MenuNode::~MenuNode()
 {
-    delete next;
+    delete m_bro;
 }
 
-Menu::Menu(std::string _str)
+Menu::Menu(std::string t_str)
 {
-    data = new MenuNode(_str);
+    m_data = new MenuNode(t_str);
 }
 
 Menu::~Menu()
 {
-    delete data;
+    delete m_data;
 }
 
 void Menu::render()
 {
-    for (MenuNode* p = data; p != nullptr; p = p->next)
-        std::cout << p->text.c_str() << std::endl;
+    for (MenuNode* p = m_data; p != nullptr; p = p->m_bro)
+        std::cout << p->m_text.c_str() << std::endl;
 }

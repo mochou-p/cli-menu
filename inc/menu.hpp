@@ -5,18 +5,16 @@
 #ifndef __menu_hpp_
 #define __menu_hpp_
 
-#include <iostream>
 #include <string>
 
 class MenuNode
 {
 public:
-
     MenuNode(std::string);
     ~MenuNode();
 
-    std::string text;
-    MenuNode*   next = nullptr;
+    std::string m_text;
+    MenuNode*   m_bro = nullptr;
 };
 
 class Menu
@@ -28,7 +26,7 @@ public:
     void render();
 
 private:
-    MenuNode* data = nullptr;
+    MenuNode* m_data = nullptr;
 };
 
 #endif  // __menu_hpp_
