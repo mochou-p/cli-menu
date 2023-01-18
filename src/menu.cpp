@@ -4,25 +4,44 @@
 
 #include <iostream>
 #include <conio.h>
+#include <cstdlib>
 
 #define INVALID_KEY (-1)
-#define END_SIG       3
+#define SIG_CTRLC     3
+#define KEY_ESC      27
 #define UP           72
 #define DOWN         80
 
-MenuNode::MenuNode(std::string t_str)
+MenuNode::MenuNode(std::string t_text, MenuNode* t_dad)
+: m_dad(t_dad)
 {
-    std::size_t pos = t_str.find(",");
+    auto comma = t_text.find(",");
+    auto colon = t_text.find(":");
+    auto semic = t_text.find(";");
 
-    m_text = t_str.substr(0, pos);
+    if (comma == -1llu && colon == -1llu && semic == -1llu)
+    {
+        m_text.assign(t_text);
+        return;
+    }
 
-    if (pos < t_str.length())
-        m_bro = new MenuNode(t_str.substr(pos + 1));
+    auto min  = std::min(comma, std::min(colon, semic));
+    auto rest = t_text.substr(min + 1);
+
+    m_text.assign(t_text.substr(0, min));
+
+    if (min == comma)
+        m_bro = new MenuNode(rest, m_dad ? m_dad : nullptr);
+    else if (min == colon)
+        m_son = new MenuNode(rest, this);
+    else if (min == semic)
+        m_dad->m_bro = new MenuNode(rest);
 }
 
 MenuNode::~MenuNode()
 {
     delete m_bro;
+    delete m_son;
 }
 
 Menu::Menu(std::string t_str)
@@ -33,6 +52,7 @@ Menu::Menu(std::string t_str)
 Menu::~Menu()
 {
     delete m_data;
+    system("cls");
 }
 
 inline void active_text(std::string t_str)
@@ -54,13 +74,15 @@ void Menu::render()
         active =  0,
         i;
 
-    for (auto p = m_data; p->m_bro != nullptr; p = p->m_bro)
+    for (auto p = m_data; p->m_bro; p = p->m_bro)
         ++last;
 
     do
     {
         switch (key)
         {
+        case SIG_CTRLC:
+            exit(EXIT_FAILURE);
         case UP:
             if (active == 0)
                 continue;
@@ -82,12 +104,12 @@ void Menu::render()
         i = 0;
         system("cls");
 
-        for (auto p = m_data; p != nullptr; p = p->m_bro)
+        for (auto p = m_data; p; p = p->m_bro)
         {
             active == i++
             ? active_text(p->m_text.c_str())
             : (void) (std::cout << p->m_text.c_str() << '\n');
         }
         std::cout << '\r';
-    } while ((key = _getch()) != END_SIG);
+    } while ((key = _getch()) != KEY_ESC);
 }
