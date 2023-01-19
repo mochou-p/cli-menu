@@ -10,13 +10,19 @@
 class MenuNode
 {
 public:
-    MenuNode(std::string, MenuNode* t_dad = nullptr);
+    MenuNode
+    (
+        std::string,
+        MenuNode* t_up   = nullptr,
+        MenuNode* t_left = nullptr
+    );
     ~MenuNode();
 
     std::string m_text;
-    MenuNode*   m_dad = nullptr;
-    MenuNode*   m_bro = nullptr;
-    MenuNode*   m_son = nullptr;
+    MenuNode*   m_up    = nullptr;
+    MenuNode*   m_left  = nullptr;
+    MenuNode*   m_right = nullptr;
+    MenuNode*   m_down  = nullptr;
 };
 
 class Menu

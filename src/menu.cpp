@@ -6,14 +6,18 @@
 #include <conio.h>
 #include <cstdlib>
 
-#define INVALID_KEY (-1)
-#define SIG_CTRLC     3
-#define KEY_ESC      27
-#define UP           72
-#define DOWN         80
+#define SIG_CTRL_C      3
 
-MenuNode::MenuNode(std::string t_text, MenuNode* t_dad)
-: m_dad(t_dad)
+#define KEY_INVALID   (-1)
+#define KEY_BACKSPACE   8
+#define KEY_ENTER      13
+#define KEY_ESC        27
+#define KEY_UP         72
+#define KEY_DOWN       80
+
+MenuNode::MenuNode(std::string t_text, MenuNode* t_up, MenuNode* t_left)
+: m_up   {t_up}
+, m_left {t_left}
 {
     auto comma = t_text.find(",");
     auto colon = t_text.find(":");
@@ -31,17 +35,17 @@ MenuNode::MenuNode(std::string t_text, MenuNode* t_dad)
     m_text.assign(t_text.substr(0, min));
 
     if (min == comma)
-        m_bro = new MenuNode(rest, m_dad ? m_dad : nullptr);
+        m_right       = new MenuNode(rest, m_up ? m_up : nullptr, this);
     else if (min == colon)
-        m_son = new MenuNode(rest, this);
-    else if (min == semic)
-        m_dad->m_bro = new MenuNode(rest);
+        m_down        = new MenuNode(rest, this);
+    else
+        m_up->m_right = new MenuNode(rest);
 }
 
 MenuNode::~MenuNode()
 {
-    delete m_bro;
-    delete m_son;
+    delete m_right;
+    delete m_down;
 }
 
 Menu::Menu(std::string t_str)
@@ -51,8 +55,8 @@ Menu::Menu(std::string t_str)
 
 Menu::~Menu()
 {
-    delete m_data;
     system("cls");
+    delete m_data;
 }
 
 inline void active_text(std::string t_str)
@@ -67,49 +71,84 @@ inline void active_text(std::string t_str)
     std::cout << output << std::endl;
 }
 
+int recount(MenuNode* t_p)
+{
+    auto p      = *t_p;
+    auto count  = 0;
+
+    for (; p.m_left;  p = *p.m_left)
+        ;
+
+    for (; p.m_right; p = *p.m_right)
+        ++count;
+
+    return count;
+}
+
 void Menu::render()
 {
-    int last   =  0,
-        key    =  INVALID_KEY,
-        active =  0,
-        i;
+    auto p      = m_data;
+    auto pp     = m_data;
+    auto ap     = m_data;
 
-    for (auto p = m_data; p->m_bro; p = p->m_bro)
-        ++last;
+    auto count  = recount(p);
+
+    auto key    =  KEY_INVALID;
+    auto active =  0;
+    int i;
 
     do
     {
         switch (key)
         {
-        case SIG_CTRLC:
+        case KEY_INVALID:
+            break;
+        case SIG_CTRL_C:
             exit(EXIT_FAILURE);
-        case UP:
+        case KEY_BACKSPACE:
+            if (!ap->m_up)
+                continue;
+
+            for (pp = ap->m_up; pp->m_left; pp = pp->m_left)
+                ;
+
+            count = recount(pp);
+            break;
+        case KEY_ENTER:
+            if (!ap->m_down)
+                continue;
+
+            pp    = ap->m_down;
+            count = recount(pp);
+            break;
+        case KEY_UP:
             if (active == 0)
                 continue;
 
             --active;
             break;
-        case DOWN:
-            if (active == last)
+        case KEY_DOWN:
+            if (active == count)
                 continue;
 
             ++active;
-            break;
-        case INVALID_KEY:
             break;
         default:
             continue;
         }
 
-        i = 0;
         system("cls");
+        p = pp;
 
-        for (auto p = m_data; p; p = p->m_bro)
+        for (i = 0; p; p = p->m_right)
         {
-            active == i++
-            ? active_text(p->m_text.c_str())
-            : (void) (std::cout << p->m_text.c_str() << '\n');
+            if (active == i++)
+            {
+                active_text(p->m_text.c_str());
+                ap = p;
+            }
+            else
+                std::cout << p->m_text.c_str() << std::endl;
         }
-        std::cout << '\r';
     } while ((key = _getch()) != KEY_ESC);
 }
