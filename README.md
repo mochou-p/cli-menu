@@ -3,6 +3,7 @@
 ## Usage
 ```cpp
 // C++
+
 Menu title_screen
 (
     "play,"
