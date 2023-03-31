@@ -6,46 +6,74 @@
 #include <conio.h>
 #include <cstdlib>
 
-#define SIG_CTRL_C      3
+#define SIG_CTRL_C       3
 
-#define KEY_INVALID   (-1)
-#define KEY_BACKSPACE   8
-#define KEY_ENTER      13
-#define KEY_ESC        27
-#define KEY_UP         72
-#define KEY_DOWN       80
+#define KEY_FIRST_PASS (-1)
+#define KEY_BACKSPACE    8
+#define KEY_ENTER       13
+#define KEY_ESC         27
+#define KEY_UP          72
+#define KEY_DOWN        80
 
 MenuNode::MenuNode(std::string t_text, MenuNode* t_up, MenuNode* t_left)
 : m_up   {t_up}
 , m_left {t_left}
 {
-    auto comma = t_text.find(",");
-    auto colon = t_text.find(":");
-    auto semic = t_text.find(";");
+    std::size_t len = t_text.length();
+    std::size_t min = std::min(
+        t_text.find(','), std::min(
+            t_text.find(':'), std::min(
+                t_text.find(';'), len
+            )
+        )
+    );
 
-    if (comma == -1llu && colon == -1llu && semic == -1llu)
+    if (min == len)
     {
         m_text.assign(t_text);
         return;
     }
 
-    auto min  = std::min(comma, std::min(colon, semic));
-    auto rest = t_text.substr(min + 1);
-
     m_text.assign(t_text.substr(0, min));
+    std::string rest =   t_text.substr(min + 1);
 
-    if (min == comma)
-        m_right       = new MenuNode(rest, m_up ? m_up : nullptr, this);
-    else if (min == colon)
-        m_down        = new MenuNode(rest, this);
-    else
-        m_up->m_right = new MenuNode(rest);
+    switch (t_text.at(min))
+    {
+    case ',':
+        m_right = new MenuNode(rest, m_up ? m_up : nullptr, this);
+        break;
+    case ':':
+        m_down  = new MenuNode(rest, this);
+        break;
+    case ';':
+        {
+        MenuNode* p = this;
+
+        for (; rest.at(0) == ';'; p = p->m_up)
+            rest = rest.substr(1);
+
+        p          = p->m_up;
+        p->m_right = new MenuNode(rest, p->m_up ? p->m_up : nullptr, p);
+        break;
+        }
+    default:
+        break;
+    }
 }
 
-MenuNode::~MenuNode()
+void MenuNode::destroy()
 {
-    delete m_right;
-    delete m_down;
+    if (m_right)
+    {
+        m_right->destroy();
+        delete m_right;
+    }
+
+    if (m_down)
+    {
+        m_down->destroy();
+        delete m_down;
+    }
 }
 
 Menu::Menu(std::string t_str)
@@ -56,6 +84,8 @@ Menu::Menu(std::string t_str)
 Menu::~Menu()
 {
     system("cls");
+
+    m_data->destroy();
     delete m_data;
 }
 
@@ -71,15 +101,14 @@ inline void active_text(std::string t_str)
     std::cout << output << std::endl;
 }
 
-int recount(MenuNode* t_p)
+int recount(MenuNode t_p)
 {
-    auto p      = *t_p;
-    auto count  = 0;
+    int count = 0;
 
-    for (; p.m_left;  p = *p.m_left)
+    for (; t_p.m_left;  t_p = *t_p.m_left)
         ;
 
-    for (; p.m_right; p = *p.m_right)
+    for (; t_p.m_right; t_p = *t_p.m_right)
         ++count;
 
     return count;
@@ -87,21 +116,20 @@ int recount(MenuNode* t_p)
 
 void Menu::render()
 {
-    auto p      = m_data;
-    auto pp     = m_data;
-    auto ap     = m_data;
+    MenuNode* p  = m_data;
+    MenuNode* pp = m_data;
+    MenuNode* ap = m_data;
 
-    auto count  = recount(p);
-
-    auto key    =  KEY_INVALID;
-    auto active =  0;
+    int count    = recount(*p);
+    int key      = KEY_FIRST_PASS;
+    int active   = 0;
     int i;
 
     do
     {
         switch (key)
         {
-        case KEY_INVALID:
+        case KEY_FIRST_PASS:
             break;
         case SIG_CTRL_C:
             exit(EXIT_FAILURE);
@@ -112,14 +140,16 @@ void Menu::render()
             for (pp = ap->m_up; pp->m_left; pp = pp->m_left)
                 ;
 
-            count = recount(pp);
+            count  = recount(*pp);
+            active > count && (active = count);
             break;
         case KEY_ENTER:
             if (!ap->m_down)
                 continue;
 
-            pp    = ap->m_down;
-            count = recount(pp);
+            pp     = ap->m_down;
+            count  = recount(*pp);
+            active > count && (active = count);
             break;
         case KEY_UP:
             if (active == 0)
@@ -144,8 +174,8 @@ void Menu::render()
         {
             if (active == i++)
             {
-                active_text(p->m_text.c_str());
                 ap = p;
+                active_text(p->m_text.c_str());
             }
             else
                 std::cout << p->m_text.c_str() << std::endl;

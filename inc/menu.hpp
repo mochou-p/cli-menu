@@ -7,16 +7,17 @@
 
 #include <string>
 
-class MenuNode
+struct MenuNode
 {
-public:
     MenuNode
     (
         std::string,
         MenuNode* t_up   = nullptr,
         MenuNode* t_left = nullptr
     );
-    ~MenuNode();
+    ~MenuNode() {};
+
+    void destroy();
 
     std::string m_text;
     MenuNode*   m_up    = nullptr;
