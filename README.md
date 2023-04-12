@@ -21,6 +21,8 @@ Menu title_screen
     "quit"
 );
 
+// aka "play,settings:gameplay,video:resolution,fullscreen:on,off;;audio:music,effects;;credits,quit"
+
 title_screen.render();
 ```
 
